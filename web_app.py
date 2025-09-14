@@ -46,15 +46,10 @@ def get_attention_visualization_data(text):
         single_token_text = tokenizer.decode([token_id])
         tokens.append(single_token_text)
     
-    # 注意力权重已经是softmax的结果（和为1），但为了可视化效果进行归一化
-    min_w, max_w = min(weights), max(weights)
-    if max_w > min_w:  # 避免除零错误
-        normalized_weights = [(w - min_w) / (max_w - min_w) for w in weights]
-    else:
-        # 所有权重相等的情况
-        normalized_weights = [0.5] * len(weights)
+    # 注意力权重已经是softmax的结果（和为1），直接使用原始权重进行可视化
+    # 保持概率分布的真实性质，不做min-max归一化
 
-    return tokens, normalized_weights, tokenizer_info
+    return tokens, weights, tokenizer_info
 
 @app.route('/')
 def index():
