@@ -41,9 +41,10 @@
 **用户故事：** 作为研究者，我希望工具支持不同的开源LLM，以便在不同模型间比较注意力模式。
 
 #### 验收标准
-1. WHEN 用户使用Qwen系列模型 THEN 系统 SHALL 正确提取和可视化注意力权重
+1. WHEN 用户使用Qwen2系列模型 THEN 系统 SHALL 正确提取和可视化注意力权重
 2. IF 模型架构与标准Transformer兼容 THEN 系统 SHALL 自动适配并正常工作
 3. WHEN 模型不支持注意力输出 THEN 系统 SHALL 提供明确的错误提示和替代建议
+4. IF 用户使用Qwen3等新模型 THEN 系统 SHALL 检测transformers版本兼容性并提供升级建议
 
 ### 需求5：提示词优化支持
 **用户故事：** 作为提示词工程师，我希望能快速识别提示词中模型最关注的部分，以便优化提示词结构。
@@ -60,6 +61,7 @@
    - 批量对比、统计摘要
    - 完整Web应用版本（在线编辑提示词+实时可视化）
    - 交互式可视化增强功能
+   - Qwen3等最新模型支持（需升级transformers到最新版本）
 
 ## 技术约束
 - 使用Python 3.12+
@@ -67,3 +69,16 @@
 - 支持Windows 11环境
 - 使用matplotlib进行可视化
 - 遵循项目的简洁设计原则
+
+## Qwen3兼容性说明
+- **当前状态**：Qwen3模型暂不被transformers 4.49.0支持
+- **错误原因**：transformers库尚未添加qwen3模型类型到CONFIG_MAPPING
+- **解决方案**：
+  ```bash
+  # 升级到最新transformers版本
+  pip install --upgrade transformers
+  
+  # 或从源码安装最新版本  
+  pip install git+https://github.com/huggingface/transformers.git
+  ```
+- **当前替代方案**：使用Qwen2系列模型（已验证兼容）

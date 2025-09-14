@@ -1,0 +1,20 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attention Visualization</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .token { padding: 2px 4px; margin: 1px; border-radius: 3px; }
+        .info { margin: 20px 0; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>注意力权重可视化</h1>
+    <div class="info">输入文本: "我爱中国"</div>
+    <div class="visualization">
+<span class="token" style="background-color: rgb(255, 0, 0)" title="权重: 1.000">我</span><span class="token" style="background-color: rgb(255, 160, 160)" title="权重: 0.370">爱</span><span class="token" style="background-color: rgb(255, 255, 255)" title="权重: 0.000">中国</span>
+    </div>
+    <div class="info">鼠标悬停查看具体权重值</div>
+</body>
+</html>
