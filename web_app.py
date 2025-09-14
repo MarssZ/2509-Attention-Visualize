@@ -31,11 +31,13 @@ def get_attention_visualization_data(text):
     inputs = tokenizer(text, return_tensors="pt")
     outputs = model(**inputs, output_attentions=True)
     
-    # 权重聚合（与原代码相同）
-    attention = outputs.attentions[-1]
-    averaged = attention.mean(dim=1)
-    weights = averaged.sum(dim=-2)
-    weights = weights.squeeze().tolist()
+    # 正确的注意力权重提取：最后一个token对所有位置的注意力分布
+    attention = outputs.attentions[-1]  # [batch, heads, seq_len, seq_len]
+    averaged = attention.mean(dim=1)    # [batch, seq_len, seq_len] - 平均所有注意力头
+
+    # 取最后一个token对所有位置的注意力（这才是正确的注意力可视化）
+    last_token_attention = averaged[0, -1, :]  # [seq_len] - 最后位置的注意力分布
+    weights = last_token_attention.detach().numpy().tolist()
     
     # 获取可读tokens（与原代码相同）
     input_ids = inputs["input_ids"][0]
@@ -44,10 +46,14 @@ def get_attention_visualization_data(text):
         single_token_text = tokenizer.decode([token_id])
         tokens.append(single_token_text)
     
-    # 归一化权重（与原代码相同）
+    # 注意力权重已经是softmax的结果（和为1），但为了可视化效果进行归一化
     min_w, max_w = min(weights), max(weights)
-    normalized_weights = [(w - min_w) / (max_w - min_w) for w in weights]
-    
+    if max_w > min_w:  # 避免除零错误
+        normalized_weights = [(w - min_w) / (max_w - min_w) for w in weights]
+    else:
+        # 所有权重相等的情况
+        normalized_weights = [0.5] * len(weights)
+
     return tokens, normalized_weights, tokenizer_info
 
 @app.route('/')
