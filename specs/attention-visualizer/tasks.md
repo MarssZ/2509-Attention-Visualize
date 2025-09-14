@@ -1,86 +1,64 @@
 # 任务清单
 
-## 按验证容易程度排序 (技术验证优先，避免错误传染)
+## 按骨干完整性排序 (最小验证→骨干→完善→优化)
 
-### Console验证 - 技术基础验证 (最高优先级)
+### 最小验证任务 (优先级1) - 技术风险消除
 
-- [ ] 1. 实现verify.md中的最小验证DEMO
-  - 需求：核心技术可行性验证
+- [ ] 1. 实现最小验证DEMO
+  - 来源：verify.md第39-62行的最小验证DEMO
   - 文件：`test_basic_verification.py`
-  - 验证：Console显示 `"权重形状: torch.Size([1, 10])"`，证明核心链路可行
+  - 验证：Console显示 `"权重形状: torch.Size([1, 4])"`，证明核心算法可行
 
-- [ ] 2. 实现注意力权重提取
-  - 需求：REQ-1 (注意力权重提取)
+### 骨干任务 (优先级2) - 端到端最简流程
+
+- [ ] 2. 实现核心注意力提取组件
+  - 来源：requirements.md需求1 + design.md的AttentionExtractor
   - 文件：`src/attention_extractor.py`
-  - 验证：Console显示 `"AttentionExtractor: extracted shape (1, 12, 10, 10)"`
+  - 验证：Console显示具体注意力张量形状
 
-- [ ] 3. 创建权重聚合功能
-  - 需求：REQ-1.3 + REQ-2.1 (权重张量处理)
+- [ ] 3. 实现权重聚合组件
+  - 来源：requirements.md需求2.1 + design.md的WeightAggregator  
   - 文件：`src/weight_aggregator.py`
-  - 验证：Console显示 `"WeightAggregator: aggregated to shape (10,) with max=0.85"`
+  - 验证：Console显示聚合后的权重分布
 
-### 5秒验证 - 用户可见效果
-
-- [ ] 4. 创建HTML基础模板
-  - 需求：REQ-2 (HTML文本高亮可视化)
+- [ ] 4. 实现HTML渲染组件
+  - 来源：requirements.md需求2.2-2.4 + design.md的HTMLRenderer
   - 文件：`src/html_renderer.py`
-  - 验证：打开HTML文件 → 看到基础页面结构和样式
+  - 验证：生成HTML文件，浏览器显示红色高亮文本
 
-- [ ] 5. 实现简单文本着色功能
-  - 需求：REQ-2.2 (token级别标注)
-  - 文件：`src/html_renderer.py`
-  - 验证：输入"Hello World" → HTML显示红色高亮文本
-
-- [ ] 6. 实现主接口函数框架
-  - 需求：REQ-3 (简化接口)
+- [ ] 5. 集成主接口函数
+  - 来源：requirements.md需求3 + design.md主接口设计
   - 文件：`src/visualize_attention.py`
-  - 验证：调用函数 → 生成HTML文件并自动打开浏览器
+  - 验证：调用函数 → 完整流程跑通，生成可视化HTML
 
-- [ ] 7. 添加Token对齐处理
-  - 需求：REQ-2.2 (token标签显示)
-  - 文件：`src/html_renderer.py`
-  - 验证：输入带特殊字符的文本 → HTML正确显示所有token
+### 完善任务 (优先级3) - 功能增强
 
-### 集成验证 - 完整流程测试
-
-- [ ] 8. 添加模型兼容性检查
-  - 需求：REQ-4 (多模型兼容性)
+- [ ] 6. 添加模型兼容性检查
+  - 来源：requirements.md需求4 + design.md错误处理
   - 文件：`src/attention_extractor.py`
-  - 验证：Console显示 `"Model compatibility: ✅ supports output_attentions"` 或警告信息
+  - 验证：不支持的模型显示明确错误提示
 
-- [ ] 9. 集成完整数据流
-  - 需求：REQ-1到REQ-3的集成
-  - 文件：`src/visualize_attention.py`
-  - 验证：Console显示 `"Pipeline complete: model → attention → HTML in 3.2s"`
-
-### 状态验证 - 需要特殊条件
-
-- [ ] 10. 测试小型模型兼容性
-  - 需求：REQ-4.1 (Qwen系列支持)
-  - 文件：`tests/test_model_compatibility.py`
-  - 验证：使用bert-base-uncased → 生成正确的注意力可视化
-
-- [ ] 11. 实现长文本处理
-  - 需求：REQ-2.3 (长序列自动调整)
+- [ ] 7. 实现长文本处理优化
+  - 来源：requirements.md需求2.3 + design.md布局调整
   - 文件：`src/html_renderer.py`
-  - 验证：输入500个token的文本 → HTML支持滚动查看且布局正常
+  - 验证：500个token文本正常显示和滚动
 
-- [ ] 12. 添加色彩映射优化
-  - 需求：REQ-2.4 (颜色深度对应权重强度)
-  - 文件：`src/html_renderer.py`
-  - 验证：相同文本多次运行 → 最高权重token始终是最深红色
+### 优化任务 (优先级4) - 边缘情况和性能
 
-### 边缘情况处理 - 异常和优化
-
-- [ ] 13. 实现错误处理机制
-  - 需求：REQ-3.4 (清晰错误信息)
+- [ ] 8. 完善错误处理机制
+  - 来源：requirements.md需求3.4 + design.md错误处理设计
   - 文件：`src/attention_extractor.py`, `src/visualize_attention.py`
-  - 验证：传入不支持注意力的模型 → 显示明确错误提示和解决建议
+  - 验证：异常模型显示有用的错误信息和解决建议
 
-- [ ] 14. 添加性能监控
-  - 需求：REQ-3.3 (10秒内完成可视化)
+- [ ] 9. 添加性能监控和优化
+  - 来源：requirements.md需求3.3 + design.md性能要求
   - 文件：`src/visualize_attention.py`
-  - 验证：运行大模型推理 → Console显示耗时且在10秒内完成
+  - 验证：Console显示处理耗时且在10秒内完成
+
+- [ ] 10. 实现批量可视化功能
+  - 来源：requirements.md需求5.2 (P2未来功能)
+  - 文件：`src/visualize_attention.py`
+  - 验证：支持多个提示词的对比可视化
 
 ## 项目结构
 

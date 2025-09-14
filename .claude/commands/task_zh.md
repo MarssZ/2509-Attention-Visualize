@@ -42,7 +42,7 @@ argument-hint: [功能名称]
 ## 骨干任务识别
 
 ### 最小验证任务（优先级1）
-- **来源**：verify.md的最小验证DEMO
+- **来源**：verify.md的相关需要验证的DEMO
 - **目标**：证明关键算法/API可行，消除最大技术风险
 - **验证**：Console输出具体技术指标
 
@@ -63,4 +63,4 @@ argument-hint: [功能名称]
 
 ---
 
-**任务：基于 `specs/{feature_name}/design.md` 生成任务清单**
+**任务：基于 `specs/{feature_name}/` 下的三个文档（requirements.md, design.md, verify.md）生成任务清单**
