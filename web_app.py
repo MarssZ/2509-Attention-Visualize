@@ -3,11 +3,7 @@
 基于现有的 visualize_attention 逻辑
 """
 
-from flask import Flask, request, jsonify, render_template_string
-import json
-
-# 导入现有的可视化逻辑
-from test_basic_verification import visualize_attention as _visualize_attention
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
