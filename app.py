@@ -11,12 +11,12 @@ def get_attention_visualization_data(text):
     """
     提取现有逻辑的核心部分，返回可视化数据和tokenizer信息
     """
-    from modelscope import AutoModel, AutoTokenizer
+    from modelscope import AutoModelForCausalLM, AutoTokenizer
     import torch
-    
-    # 加载模型（与原代码相同）
+
+    # 加载模型（改用CausalLM以支持预测）
     model_name = "Qwen/Qwen2-0.5B-Instruct"
-    model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     
     # 获取tokenizer技术信息（新增）
@@ -50,7 +50,36 @@ def get_attention_visualization_data(text):
     # 注意力权重已经是softmax的结果（和为1），直接使用原始权重进行可视化
     # 保持概率分布的真实性质，不做min-max归一化
 
-    return tokens, weights, tokenizer_info, token_ids
+    # 新增：获取下一token预测（Top-K候选）
+    logits = outputs.logits[0, -1, :]  # 最后位置的预测分数 [vocab_size]
+    probs = torch.softmax(logits, dim=-1)  # 转换为概率分布
+
+    # 获取Top-10候选token
+    top_k = 10
+    top_probs, top_token_ids = torch.topk(probs, top_k)
+
+    # 构建候选列表
+    candidates = []
+    for i in range(top_k):
+        token_id = top_token_ids[i].item()
+        prob = top_probs[i].item()
+        token_text = tokenizer.decode([token_id])
+        candidates.append({
+            'token': token_text,
+            'probability': prob,
+            'token_id': token_id,
+            'rank': i + 1
+        })
+
+    # 预测信息（保持向后兼容，主预测是第一个）
+    prediction_info = {
+        'token': candidates[0]['token'],
+        'probability': candidates[0]['probability'],
+        'token_id': candidates[0]['token_id'],
+        'top_candidates': candidates  # 新增Top-K候选列表
+    }
+
+    return tokens, weights, tokenizer_info, token_ids, prediction_info
 
 @app.route('/')
 def index():
@@ -94,6 +123,67 @@ def index():
             font-size: 14px;
         }
         .tech-details { color: #555; font-family: monospace; }
+
+        /* Tooltip样式 */
+        .prediction-token {
+            position: relative;
+            cursor: pointer;
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .prediction-token:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .candidate-item {
+            margin: 3px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #555;
+        }
+        .candidate-item:last-child {
+            border-bottom: none;
+        }
+        .candidate-rank {
+            color: #87CEEB;
+            font-weight: bold;
+            width: 20px;
+            display: inline-block;
+        }
+        .candidate-token {
+            color: #fff;
+            font-weight: bold;
+            margin: 0 8px;
+        }
+        .candidate-prob {
+            color: #ccc;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -116,9 +206,11 @@ def index():
             
             <div class="info">
                 <strong>使用说明:</strong><br>
-                • 鼠标悬停查看具体权重值<br>
-                • 红色越深表示注意力权重越高<br>
-                • 分词边界可能不符合人类直觉
+                • <span style="color: #d32f2f;">红色权重</span> 显示模型对历史信息的关注度<br>
+                • <span style="color: #1976d2;">蓝色预测</span> 是基于红色权重计算的下一个token<br>
+                • 红色越深 → 对预测蓝色token的贡献越大<br>
+                • 鼠标悬停红色token查看具体权重值<br>
+                • <strong>鼠标悬停蓝色预测token查看Top-10候选及概率</strong>
             </div>
             
             <div class="info-row" id="infoRow" style="display: none;">
@@ -190,8 +282,39 @@ def index():
                 const data = await response.json();
                 
                 if (data.success) {
-                    // 显示可视化结果
-                    visualization.innerHTML = data.html;
+                    // 显示可视化结果 + 预测token
+                    let visualizationHtml = data.html;
+
+                    // 添加预测token显示（蓝色背景 + tooltip）
+                    if (data.prediction) {
+                        const predToken = data.prediction.token;
+                        const predProb = (data.prediction.probability * 100).toFixed(1);
+
+                        // 构建Top-K候选tooltip内容
+                        let tooltipContent = '<div><strong>Top-10 候选预测:</strong></div>';
+                        if (data.prediction.top_candidates) {
+                            data.prediction.top_candidates.forEach(candidate => {
+                                const prob = (candidate.probability * 100).toFixed(1);
+                                const escapedToken = candidate.token.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&/g, '&amp;');
+                                tooltipContent += `
+                                    <div class="candidate-item">
+                                        <span class="candidate-rank">${candidate.rank}.</span>
+                                        <span class="candidate-token">"${escapedToken}"</span>
+                                        <span class="candidate-prob">${prob}%</span>
+                                    </div>
+                                `;
+                            });
+                        }
+
+                        visualizationHtml += `
+                            <span class="token prediction-token" style="background-color: #87CEEB; border: 2px solid #4682B4; margin-left: 5px;">
+                                ${predToken}(${predProb}%)
+                                <div class="tooltip">${tooltipContent}</div>
+                            </span>
+                        `;
+                    }
+
+                    visualization.innerHTML = visualizationHtml;
                     
                     // 显示tokenizer技术信息和警告信息
                     if (data.tokenizer_info) {
@@ -254,8 +377,8 @@ def visualize():
         if not text:
             return jsonify({'success': False, 'error': '文本不能为空'})
         
-        # 调用现有的可视化逻辑
-        tokens, normalized_weights, tokenizer_info, token_ids = get_attention_visualization_data(text)
+        # 调用现有的可视化逻辑（新增预测信息）
+        tokens, normalized_weights, tokenizer_info, token_ids, prediction_info = get_attention_visualization_data(text)
         
         # 生成HTML可视化片段
         html_parts = []
@@ -305,7 +428,8 @@ def visualize():
             'html': visualization_html,
             'token_count': len(tokens),
             'tokenizer_info': tokenizer_info,
-            'token_details_html': ''.join(token_details_html)
+            'token_details_html': ''.join(token_details_html),
+            'prediction': prediction_info  # 新增预测信息
         })
         
     except Exception as e:
