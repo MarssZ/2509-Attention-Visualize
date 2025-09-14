@@ -25,7 +25,7 @@
 - [x] 6. 实现Web交互式界面 (新增核心功能)
   - **用户需求**：在浏览器中动态输入文本，实时显示注意力可视化
   - **设计决策**：Flask轻量级Web服务，包装现有可视化逻辑，保持零破坏性
-  - 文件：`web_app.py`
+  - 文件：`app.py`
   - 功能特性：
     - ✅ 交互式Web界面：输入框 + 实时可视化
     - ✅ AJAX异步处理：无需刷新页面
@@ -51,49 +51,49 @@
     - ✅ 反映模型在处理整个序列时的注意力分配
     - ✅ 符合Transformer因果注意力的实际机制
   - **修改文件**：
-    - `web_app.py:34-40` - 更新注意力权重提取逻辑
-    - `web_app.py:49-57` - 改进归一化错误处理
+    - `app.py:34-40` - 更新注意力权重提取逻辑
+    - `app.py:49-57` - 改进归一化错误处理
   - 验证：✅ 注意力权重现在具有明确的语义含义，可视化结果更准确
 
 ### 完善任务 (优先级3) - 功能增强
 
 - [ ] 7. 添加模型兼容性检查
   - 来源：requirements.md需求4 + design.md错误处理
-  - 文件：`web_app.py` 或 `test_basic_verification.py`
+  - 文件：`app.py` 或 `test_basic_verification.py`
   - 验证：不支持的模型显示明确错误提示
 
 - [ ] 8. 实现长文本处理优化
   - 来源：requirements.md需求2.3 + design.md布局调整
-  - 文件：`web_app.py` 的前端界面
+  - 文件：`app.py` 的前端界面
   - 验证：500个token文本正常显示和滚动
 
 ### 优化任务 (优先级4) - 边缘情况和性能
 
 - [ ] 9. 完善错误处理机制
   - 来源：requirements.md需求3.4 + design.md错误处理设计
-  - 文件：`web_app.py` 的API错误处理
+  - 文件：`app.py` 的API错误处理
   - 验证：异常模型显示有用的错误信息和解决建议
 
 - [ ] 10. 添加性能监控和优化
   - 来源：requirements.md需求3.3 + design.md性能要求
-  - 文件：`web_app.py` 
+  - 文件：`app.py` 
   - 验证：Web界面显示处理耗时且在10秒内完成
 
 - [ ] 11. 实现批量可视化功能
   - 来源：requirements.md需求5.2 (P2未来功能)
-  - 文件：`web_app.py` 扩展多输入功能
+  - 文件：`app.py` 扩展多输入功能
   - 验证：支持多个提示词的对比可视化
 
 - [ ] 12. 添加最新模型支持 (未来任务)
   - 来源：requirements.md需求4.4 (P2未来功能)
-  - 文件：`web_app.py` 的模型加载逻辑
+  - 文件：`app.py` 的模型加载逻辑
   - 验证：检测transformers版本，支持Qwen3等新模型或提供升级提示
 
 ## 项目结构 (实际采用的简洁架构)
 
 ```
 ├── test_basic_verification.py  # 核心文件：包含完整可视化流程
-├── web_app.py                  # Web交互式界面：Flask服务器
+├── app.py                  # Web交互式界面：Flask服务器
 ├── attention_viz.html          # 生成的可视化HTML文件
 ├── specs/                      # 规范文档目录
 ├── pyproject.toml             # 项目依赖配置（uv管理）
@@ -114,7 +114,7 @@ python test_basic_verification.py
 # - 文件: attention_viz.html (可在浏览器打开查看可视化效果)
 
 # 方式2：Web交互式界面 (推荐)
-python web_app.py
+python app.py
 # 然后访问: http://localhost:5000
 # 在浏览器中动态输入文本，实时查看注意力可视化
 
