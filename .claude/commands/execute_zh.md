@@ -8,6 +8,7 @@ argument-hint: [功能名称] [任务描述或任务编号]
 基于规范文档执行单个具体的编码任务，聚焦实现。
 
 ## 执行原则
+- "Any fool can write code that a computer can understand. Good programmers write code that humans can understand."
 
 ### 核心约束
 - **一次一任务**：只执行用户指定的单个任务
