@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__mcp-fetcher__fetch_url",
+      "mcp__rag-web-browser__search",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(pip install:*)",
+      "Bash(uv init:*)",
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(python:*)",
+      "Bash(timeout:*)",
+      "WebSearch",
+      "WebSearch",
+      "WebSearch",
+      "WebSearch",
+      "WebSearch"
+    ],
+    "deny": []
+  }
+}
