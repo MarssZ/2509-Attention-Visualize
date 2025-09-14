@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 def get_attention_visualization_data(text):
     """
-    提取现有逻辑的核心部分，返回可视化数据而不是保存HTML文件
+    提取现有逻辑的核心部分，返回可视化数据和tokenizer信息
     """
     from modelscope import AutoModel, AutoTokenizer
     import torch
@@ -22,6 +22,14 @@ def get_attention_visualization_data(text):
     model_name = "Qwen/Qwen2-0.5B-Instruct"
     model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    
+    # 获取tokenizer技术信息（新增）
+    tokenizer_info = {
+        'model_name': model_name,
+        'tokenizer_type': type(tokenizer).__name__,
+        'vocab_size': tokenizer.vocab_size if hasattr(tokenizer, 'vocab_size') else 'Unknown',
+        'special_tokens_count': len(tokenizer.special_tokens_map) if hasattr(tokenizer, 'special_tokens_map') else 0
+    }
     
     # 注意力提取（与原代码相同）
     inputs = tokenizer(text, return_tensors="pt")
@@ -44,7 +52,7 @@ def get_attention_visualization_data(text):
     min_w, max_w = min(weights), max(weights)
     normalized_weights = [(w - min_w) / (max_w - min_w) for w in weights]
     
-    return tokens, normalized_weights
+    return tokens, normalized_weights, tokenizer_info
 
 @app.route('/')
 def index():
@@ -69,11 +77,30 @@ def index():
         .info { margin: 20px 0; color: #666; }
         .loading { color: #007bff; font-style: italic; }
         .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 5px; }
+        .info-row {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .info-box {
+            flex: 1;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+        }
+        .info-box h3 { 
+            margin: 0 0 8px 0; 
+            color: #666; 
+            font-size: 14px;
+        }
+        .tech-details { color: #555; font-family: monospace; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 交互式注意力可视化</h1>
+        <h1>🔍 Prompts-注意力可视化 by:Marss</h1>
         
         <div class="input-section">
             <label for="textInput">输入您的文本:</label>
@@ -83,9 +110,47 @@ def index():
         
         <div class="result-section" id="resultSection" style="display: none;">
             <h3>注意力权重可视化结果</h3>
+            
+
+            
             <div class="info" id="inputInfo"></div>
             <div id="visualization"></div>
-            <div class="info">鼠标悬停查看具体权重值</div>
+            
+            <div class="info">
+                <strong>使用说明:</strong><br>
+                • 鼠标悬停查看具体权重值<br>
+                • 红色越深表示注意力权重越高<br>
+                • 分词边界可能不符合人类直觉
+            </div>
+            
+            <div class="info-row" id="infoRow" style="display: none;">
+                <div class="info-box" id="tokenizerInfo">
+                    <h3>🔧 Tokenizer 技术信息</h3>
+                    <div class="tech-details" id="techDetails">
+                        <!-- 技术信息将通过JavaScript动态填充 -->
+                    </div>
+                </div>
+                
+                <div class="info-box" id="warningInfo">
+                    <h3>⚠️ 重要提醒</h3>
+                    <div style="font-size: 12px; line-height: 1.4;">
+                        • 不同模型的tokenizer会产生不同的分词结果<br>
+                        • Qwen系列对中文分词友好，但切换模型会改变可视化结果<br>
+                        • 注意力权重反映的是token级别的关系，不是词级别<br>
+                        • 同一句话用不同tokenizer可能产生完全不同的权重分布
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box" id="tokenDetails" style="display: none; margin: 15px 0;">
+                <h3>📝 分词结果详情</h3>
+                <div style="background: white; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" id="tokenDetailsContent">
+                    <!-- 分词详情将通过JavaScript动态填充 -->
+                </div>
+                <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                    注：方括号内数字为token在序列中的位置，引号内为实际的token文本
+                </div>
+            </div>
         </div>
     </div>
 
@@ -107,6 +172,11 @@ def index():
             visualizeBtn.disabled = true;
             visualizeBtn.innerHTML = '🔄 分析中...';
             resultSection.style.display = 'block';
+            
+            // 重置所有信息面板
+            document.getElementById('infoRow').style.display = 'none';
+            document.getElementById('tokenDetails').style.display = 'none';
+            
             inputInfo.innerHTML = `输入文本: "${text}"`;
             visualization.innerHTML = '<div class="loading">正在加载模型并分析注意力权重，请稍候...</div>';
             
@@ -122,7 +192,36 @@ def index():
                 const data = await response.json();
                 
                 if (data.success) {
+                    // 显示可视化结果
                     visualization.innerHTML = data.html;
+                    
+                    // 显示tokenizer技术信息和警告信息
+                    if (data.tokenizer_info) {
+                        const techDetails = document.getElementById('techDetails');
+                        techDetails.innerHTML = `
+                            <strong>模型:</strong> ${data.tokenizer_info.model_name}<br>
+                            <strong>Tokenizer类型:</strong> ${data.tokenizer_info.tokenizer_type}<br>
+                            <strong>词汇表大小:</strong> ${data.tokenizer_info.vocab_size.toLocaleString()}<br>
+                            <strong>特殊标记:</strong> ${data.tokenizer_info.special_tokens_count}
+                        `;
+                        // 显示整个信息行
+                        document.getElementById('infoRow').style.display = 'flex';
+                    }
+                    
+                    // 更新输入信息
+                    inputInfo.innerHTML = `
+                        <strong>输入文本:</strong> "${text}"<br>
+                        <strong>Token数量:</strong> ${data.token_count} 个
+                    `;
+                    
+                    // 显示分词结果详情
+                    const tokenDetails = document.getElementById('tokenDetails');
+                    const tokenDetailsContent = document.getElementById('tokenDetailsContent');
+                    if (data.token_details_html) {
+                        tokenDetailsContent.innerHTML = data.token_details_html;
+                        tokenDetails.style.display = 'block';
+                    }
+                    
                 } else {
                     visualization.innerHTML = `<div class="error">错误: ${data.error}</div>`;
                 }
@@ -158,7 +257,7 @@ def visualize():
             return jsonify({'success': False, 'error': '文本不能为空'})
         
         # 调用现有的可视化逻辑
-        tokens, normalized_weights = get_attention_visualization_data(text)
+        tokens, normalized_weights, tokenizer_info = get_attention_visualization_data(text)
         
         # 生成HTML可视化片段
         html_parts = []
@@ -171,10 +270,20 @@ def visualize():
         
         visualization_html = ''.join(html_parts)
         
+        # 生成分词详情HTML
+        token_details_html = []
+        for i, (token, weight) in enumerate(zip(tokens, normalized_weights)):
+            escaped_token = token.replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+            token_details_html.append(
+                f'<span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[{i}] "{escaped_token}" (权重: {weight:.3f})</span> '
+            )
+        
         return jsonify({
             'success': True,
             'html': visualization_html,
-            'token_count': len(tokens)
+            'token_count': len(tokens),
+            'tokenizer_info': tokenizer_info,
+            'token_details_html': ''.join(token_details_html)
         })
         
     except Exception as e:

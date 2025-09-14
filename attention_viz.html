@@ -4,17 +4,75 @@
 <head>
     <title>Attention Visualization</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
         .token { padding: 2px 4px; margin: 1px; border-radius: 3px; }
         .info { margin: 20px 0; color: #666; }
+        .tokenizer-info { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            padding: 15px; 
+            margin: 20px 0; 
+            font-size: 14px;
+        }
+        .tokenizer-info h3 { margin-top: 0; color: #495057; }
+        .warning { 
+            background: #fff3cd; 
+            border: 1px solid #ffeaa7; 
+            border-radius: 6px; 
+            padding: 12px; 
+            margin: 15px 0; 
+            color: #856404;
+        }
+        .tech-details { color: #6c757d; font-family: monospace; }
     </style>
 </head>
 <body>
     <h1>注意力权重可视化</h1>
-    <div class="info">输入文本: "我爱中国"</div>
-    <div class="visualization">
-<span class="token" style="background-color: rgb(255, 0, 0)" title="权重: 1.000">我</span><span class="token" style="background-color: rgb(255, 160, 160)" title="权重: 0.370">爱</span><span class="token" style="background-color: rgb(255, 255, 255)" title="权重: 0.000">中国</span>
+    
+    <div class="tokenizer-info">
+        <h3>🔧 Tokenizer 技术信息</h3>
+        <div class="tech-details">
+            <strong>模型:</strong> Qwen/Qwen2-0.5B-Instruct<br>
+            <strong>Tokenizer类型:</strong> Qwen2TokenizerFast<br>
+            <strong>词汇表大小:</strong> 151,643 tokens<br>
+            <strong>特殊标记数量:</strong> 3
+        </div>
     </div>
-    <div class="info">鼠标悬停查看具体权重值</div>
+    
+    <div class="warning">
+        <strong>⚠️ 重要提醒:</strong><br>
+        • 不同模型的tokenizer会产生不同的分词结果<br>
+        • Qwen系列对中文分词友好，但切换模型会改变可视化结果<br>
+        • 注意力权重反映的是token级别的关系，不是词级别<br>
+        • 同一句话用不同tokenizer可能产生完全不同的权重分布
+    </div>
+    
+    <div class="info">
+        <strong>输入文本:</strong> "Hello world, I am a student."<br>
+        <strong>Token数量:</strong> 8 个
+    </div>
+    
+    <div class="visualization">
+<span class="token" style="background-color: rgb(255, 0, 0)" title="权重: 1.000">Hello</span><span class="token" style="background-color: rgb(255, 116, 116)" title="权重: 0.545"> world</span><span class="token" style="background-color: rgb(255, 77, 77)" title="权重: 0.694">,</span><span class="token" style="background-color: rgb(255, 156, 156)" title="权重: 0.385"> I</span><span class="token" style="background-color: rgb(255, 85, 85)" title="权重: 0.664"> am</span><span class="token" style="background-color: rgb(255, 191, 191)" title="权重: 0.249"> a</span><span class="token" style="background-color: rgb(255, 251, 251)" title="权重: 0.013"> student</span><span class="token" style="background-color: rgb(255, 255, 255)" title="权重: 0.000">.</span>
+    </div>
+    
+    <div class="info">
+        <strong>使用说明:</strong><br>
+        • 鼠标悬停查看具体权重值<br>
+        • 红色越深表示注意力权重越高<br>
+        • 分词边界可能不符合人类直觉
+    </div>
+    
+    <div class="tokenizer-info">
+        <h3>📝 分词结果详情</h3>
+        <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+<span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[0] "Hello" (权重: 1.000)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[1] " world" (权重: 0.545)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[2] "," (权重: 0.694)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[3] " I" (权重: 0.385)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[4] " am" (权重: 0.664)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[5] " a" (权重: 0.249)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[6] " student" (权重: 0.013)</span> <span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[7] "." (权重: 0.000)</span> 
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: #6c757d;">
+            注：方括号内数字为token在序列中的位置，引号内为实际的token文本
+        </div>
+    </div>
+    
 </body>
 </html>
