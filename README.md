@@ -3,6 +3,12 @@
 > **交互式Transformer注意力权重可视化工具**
 > 通过Web界面实时分析模型的注意力分布，理解AI如何"关注"输入文本的不同部分
 
+## 📸 效果展示
+
+![注意力可视化效果](attention_visualize.png)
+
+*实际运行效果：输入你的提示词（也可以加上模型正在的输出）"我爱中国，他的首都在于"，展示了详细的token级别注意力权重分布，包括token ID、权重数值和可视化进度条*
+
 ## ✨ 功能特性
 
 - 🎯 **实时可视化** - 输入文本，立即看到注意力权重分布
@@ -15,7 +21,7 @@
 
 ### 环境要求
 - Python 3.8+
-- 支持CUDA的GPU（推荐，CPU也可运行）
+- 支持CUDA的GPU（推荐）
 
 ### 安装依赖
 ```bash
@@ -40,17 +46,6 @@ python app.py
 3. **查看结果** - 观察每个token的注意力权重和可视化效果
 4. **技术分析** - 查看tokenizer信息和详细的权重统计
 
-### 示例输出
-```
-输入："我爱中国"
-
-可视化结果：
-[0] "我"   (权重: 0.245)  ██████
-[1] "爱"   (权重: 0.189)  █████
-[2] "中国" (权重: 0.566)  ███████████
-
-权重总和: 1.000 ✓
-```
 
 ## 🔬 技术原理
 
@@ -72,9 +67,14 @@ last_token_attention = averaged[0, -1, :]  # [seq_len]
 
 ```
 ├── app.py                        # Web交互式界面（主要功能）
-├── specs/attention-visualizer/
-│   └── tasks.md                  # 项目任务和开发记录
-└── README.md                     # 项目文档
+├── specs/attention-visualizer/   # 项目规范文档
+│   ├── requirements.md           # 需求规格说明
+│   ├── design.md                 # 技术设计文档
+│   ├── tasks.md                  # 开发任务记录
+│   └── verify.md                 # 验证和测试文档
+├── CLAUDE.md                     # Claude Code配置文件
+├── pyproject.toml               # Python项目配置（本项目通过uv sync管理依赖）
+└── README.md                    # 项目文档（本文件）
 ```
 
 ## 🎯 支持的模型

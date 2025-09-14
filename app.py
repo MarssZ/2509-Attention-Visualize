@@ -39,17 +39,18 @@ def get_attention_visualization_data(text):
     last_token_attention = averaged[0, -1, :]  # [seq_len] - 最后位置的注意力分布
     weights = last_token_attention.detach().numpy().tolist()
     
-    # 获取可读tokens（与原代码相同）
+    # 获取可读tokens和token_ids
     input_ids = inputs["input_ids"][0]
     tokens = []
+    token_ids = input_ids.tolist()  # 获取token_ids列表
     for token_id in input_ids:
         single_token_text = tokenizer.decode([token_id])
         tokens.append(single_token_text)
-    
+
     # 注意力权重已经是softmax的结果（和为1），直接使用原始权重进行可视化
     # 保持概率分布的真实性质，不做min-max归一化
 
-    return tokens, weights, tokenizer_info
+    return tokens, weights, tokenizer_info, token_ids
 
 @app.route('/')
 def index():
@@ -145,7 +146,7 @@ def index():
                     <!-- 分词详情将通过JavaScript动态填充 -->
                 </div>
                 <div style="margin-top: 8px; font-size: 11px; color: #666;">
-                    注：方括号内数字为token在序列中的位置，引号内为实际的token文本
+                    注：[序号] "token文本" (ID: token_id) | 进度条长度反映权重大小 | 权重总和应约等于1.0
                 </div>
             </div>
         </div>
@@ -254,7 +255,7 @@ def visualize():
             return jsonify({'success': False, 'error': '文本不能为空'})
         
         # 调用现有的可视化逻辑
-        tokens, normalized_weights, tokenizer_info = get_attention_visualization_data(text)
+        tokens, normalized_weights, tokenizer_info, token_ids = get_attention_visualization_data(text)
         
         # 生成HTML可视化片段
         html_parts = []
@@ -267,13 +268,37 @@ def visualize():
         
         visualization_html = ''.join(html_parts)
         
-        # 生成分词详情HTML
+        # 生成分词详情HTML - 每个token一行，带进度条和token_id
         token_details_html = []
-        for i, (token, weight) in enumerate(zip(tokens, normalized_weights)):
+        weights_sum = sum(normalized_weights)
+        max_weight = max(normalized_weights) if normalized_weights else 1
+
+        for i, (token, weight, token_id) in enumerate(zip(tokens, normalized_weights, token_ids)):
             escaped_token = token.replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
-            token_details_html.append(
-                f'<span style="margin: 2px; padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-family: monospace;">[{i}] "{escaped_token}" (权重: {weight:.3f})</span> '
-            )
+            # 计算进度条长度 (最大15个字符)
+            bar_length = int((weight / max_weight) * 15) if max_weight > 0 else 0
+            progress_bar = '█' * bar_length + '░' * (15 - bar_length)
+
+            token_details_html.append(f'''
+                <div style="font-family: monospace; margin: 3px 0; padding: 5px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #007bff;">
+                    <span style="color: #666;">[{i}]</span>
+                    <span style="font-weight: bold; color: #333;">"{escaped_token}"</span>
+                    <span style="color: #666;">(ID: {token_id})</span><br>
+                    <span style="color: #666; font-size: 12px;">权重: {weight:.3f}</span>
+                    <span style="color: #007bff; margin-left: 10px;">{progress_bar}</span>
+                </div>
+            ''')
+
+        # 添加权重总和验证
+        validation_icon = "✓" if abs(weights_sum - 1.0) < 0.001 else "⚠"
+        validation_color = "#28a745" if abs(weights_sum - 1.0) < 0.001 else "#dc3545"
+
+        token_details_html.append(f'''
+            <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-family: monospace;">
+                <strong>权重总和: {weights_sum:.3f}</strong>
+                <span style="color: {validation_color}; font-size: 18px; margin-left: 8px;">{validation_icon}</span>
+            </div>
+        ''')
         
         return jsonify({
             'success': True,
