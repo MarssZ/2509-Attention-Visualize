@@ -6,6 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "flask>=3.1.2",
+    "modelscope>=1.30.0",
+    "torch>=2.8.0",
+    "transformers>=4.56.1",
 ]
 
 [[tool.uv.index]]
