@@ -16,7 +16,11 @@ def get_attention_visualization_data(text):
 
     # 加载模型（改用CausalLM以支持预测）
     model_name = "Qwen/Qwen2-0.5B-Instruct"
-    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, 
+        trust_remote_code=True,
+        attn_implementation="eager"  # 强制使用eager注意力以支持output_attentions
+    )
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     
     # 获取tokenizer技术信息（新增）

@@ -15,7 +15,8 @@
       "WebSearch",
       "WebSearch",
       "WebSearch",
-      "WebSearch"
+      "WebSearch",
+      "Bash(findstr:*)"
     ],
     "deny": []
   }
